@@ -25,7 +25,7 @@ def train_node_classification(model, data, optimizer, epochs=200, patience=20):
 
         # VALIDATION
         model.eval()
-        val_acc = evaluate_node_classification(model, data, data.val_mask)
+        val_acc, _ = evaluate_node_classification(model, data, data.val_mask)
         val_accuracies.append(val_acc)
 
 
@@ -62,10 +62,12 @@ def evaluate_node_classification(model, data, mask):
 
     Returns:
         float: accuracy на выбранной части графа
+        float: метрика over-smoothing
     """
     model.eval()
     with torch.no_grad():
         out = model(data.x, data.edge_index)
         pred = out[mask].argmax(dim=1)
         acc = (pred == data.y[mask]).sum().item() / mask.sum().item()
-        return acc
+        over_smoothing_metric = torch.mean(torch.var(out, dim=0)).item()
+        return acc, over_smoothing_metric
